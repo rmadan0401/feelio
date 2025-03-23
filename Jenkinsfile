@@ -11,7 +11,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                checkout scm
+                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/rmadan0401/feelio.git'
             }
         }
 
