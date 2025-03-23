@@ -2,56 +2,86 @@ pipeline {
     agent any
 
     environment {
-        NVM_DIR = "$HOME/.nvm"
-        NODE_VERSION = "16"
+        NVM_DIR = "/var/lib/jenkins/.nvm"
+        NODE_VERSION = "v16.20.2"
+        PATH = "/var/lib/jenkins/.nvm/versions/node/${NODE_VERSION}/bin:$PATH"
+        ANDROID_HOME = "/opt/android-sdk"
+        ANDROID_SDK_ROOT = "/opt/android-sdk"
+        PATH = "${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/cmdline-tools/latest/bin:${PATH}"
     }
 
     stages {
-
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                git(
-                    branch: 'main',
-                    url: 'https://github.com/rmadan0401/feelio.git',
-                    credentialsId: 'github-credentials'
-                )
+                checkout([
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/rmadan0401/feelio.git', 
+                        credentialsId: 'github-credentials'
+                    ]]
+                ])
             }
         }
 
-        stage('Setup Node & Install Packages') {
+        stage('Setup Node and Dependencies') {
             steps {
                 sh '''
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                    nvm install $NODE_VERSION
-                    nvm use $NODE_VERSION
-                    export PATH="$NVM_DIR/versions/node/v$NODE_VERSION.*/bin:$PATH"
+                    # Load NVM and use Node.js
+                    export NVM_DIR=/var/lib/jenkins/.nvm
+                    [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    
+                    # Verify Node & npm
                     node -v
                     npm -v
+                    
+                    # Install dependencies
                     npm install
                 '''
             }
         }
 
-        stage('Build APK') {
+        stage('Build React Native Android App') {
             steps {
                 sh '''
-                    export NVM_DIR="$HOME/.nvm"
-                    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                    nvm use $NODE_VERSION
-                    export PATH="$NVM_DIR/versions/node/v$NODE_VERSION.*/bin:$PATH"
-                    npx expo run:android --variant release
+                    # Load NVM
+                    export NVM_DIR=/var/lib/jenkins/.nvm
+                    [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+                    
+                    # Android SDK Environment
+                    export ANDROID_HOME=/opt/android-sdk
+                    export ANDROID_SDK_ROOT=/opt/android-sdk
+                    export PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+                    
+                    # Verify Android SDK path
+                    echo "ANDROID_HOME=$ANDROID_HOME"
+                    sdkmanager --version
+                    
+                    # Gradle permissions
+                    chmod +x android/gradlew
+                    
+                    # Build APK
+                    cd android
+                    ./gradlew assembleRelease
                 '''
             }
         }
 
         stage('Archive APK') {
             steps {
-                // Path where APK is generated can vary, usually in android/app/build/outputs/apk
-                // We'll use wildcard to find APK
-                sh 'find . -name "*.apk"'
-                archiveArtifacts artifacts: '**/*.apk', fingerprint: true
+                archiveArtifacts artifacts: 'android/app/build/outputs/apk/release/*.apk', fingerprint: true
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Build & APK Archive Successful!"
+        }
+        failure {
+            echo "❌ Build Failed!"
         }
     }
 }
