@@ -14,11 +14,21 @@ pipeline {
             }
         }
 
+        stage('Debug - Current Directory') {
+            steps {
+                echo 'Printing current directory:'
+                sh 'pwd'
+                echo 'Listing files:'
+                sh 'ls -la'
+                echo 'Searching for gradlew file:'
+                sh 'find . -name gradlew'
+            }
+        }
+
         stage('Permission Fix') {
             steps {
-                dir('android') {
-                    sh 'chmod +x gradlew'
-                }
+                // Try fixing permissions wherever gradlew is found
+                sh 'find . -name gradlew -exec chmod +x {} \\;'
             }
         }
 
@@ -30,15 +40,15 @@ pipeline {
 
         stage('Build Android App') {
             steps {
-                dir('android') {
-                    sh './gradlew assembleDebug'
-                }
+                sh 'find . -name gradlew' // Confirm gradlew location again
+                // Build from correct directory
+                sh 'find . -name gradlew -execdir ./gradlew assembleDebug \\;'
             }
         }
 
         stage('Archive APK') {
             steps {
-                archiveArtifacts artifacts: 'android/app/build/outputs/apk/debug/app-debug.apk', fingerprint: true
+                archiveArtifacts artifacts: '**/app/build/outputs/apk/debug/app-debug.apk', fingerprint: true
             }
         }
     }
