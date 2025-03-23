@@ -10,14 +10,14 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/rmadan0401/feelio.git', branch: 'main'
-
+                git branch: 'main',
+                    url: 'https://github.com/rmadan0401/feelio.git',
+                    credentialsId: 'github-credentials'
             }
         }
 
-        stage('Set Node & NPM') {
+        stage('Set Node & Expo') {
             steps {
-                // Install Node (no sudo way) & Expo CLI
                 sh '''
                     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
                     export NVM_DIR="$HOME/.nvm"
