@@ -10,7 +10,8 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/rmadan0401/feelio.git'
+                git url: 'https://github.com/rmadan0401/feelio.git', branch: 'main'
+
             }
         }
 
