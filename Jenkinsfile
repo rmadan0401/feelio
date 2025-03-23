@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git(
-                    branch: 'master',
+                    branch: 'main',
                     url: 'https://github.com/rmadan0401/feelio.git',
                     credentialsId: 'github-credentials'
                 )
