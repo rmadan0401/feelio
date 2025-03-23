@@ -2,35 +2,32 @@ pipeline {
     agent any
 
     environment {
-        JAVA_HOME = "${env.HOME}/jdk-11.0.2"
-        PATH = "${env.JAVA_HOME}/bin:${env.HOME}/gradle-8.2.1/bin:${env.HOME}/android-sdk/cmdline-tools/latest/bin:${env.HOME}/android-sdk/platform-tools:${env.PATH}:${env.HOME}/.npm-global/bin"
-        ANDROID_SDK_ROOT = "${env.HOME}/android-sdk"
-        NVM_DIR = "${env.HOME}/.nvm"
+        NVM_DIR = "$HOME/.nvm"
+        NODE_VERSION = "16"
     }
 
     stages {
-        stage('Clone Repository') {
+
+        stage('Checkout Code') {
             steps {
-                git branch: 'main',
+                git(
+                    branch: 'master',
                     url: 'https://github.com/rmadan0401/feelio.git',
                     credentialsId: 'github-credentials'
+                )
             }
         }
 
-        stage('Setup Node.js + Expo') {
+        stage('Setup Node & Install Packages') {
             steps {
                 sh '''
-                    #!/bin/bash
-                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
                     export NVM_DIR="$HOME/.nvm"
                     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                    
-                    nvm install 16
-                    nvm use 16
-                    npm config set prefix $HOME/.npm-global
-                    export PATH=$HOME/.npm-global/bin:$PATH
-
-                    npm install -g expo-cli
+                    nvm install $NODE_VERSION
+                    nvm use $NODE_VERSION
+                    export PATH="$NVM_DIR/versions/node/v$NODE_VERSION.*/bin:$PATH"
+                    node -v
+                    npm -v
                     npm install
                 '''
             }
@@ -39,11 +36,10 @@ pipeline {
         stage('Build APK') {
             steps {
                 sh '''
-                    #!/bin/bash
                     export NVM_DIR="$HOME/.nvm"
                     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-                    nvm use 16
-
+                    nvm use $NODE_VERSION
+                    export PATH="$NVM_DIR/versions/node/v$NODE_VERSION.*/bin:$PATH"
                     npx expo run:android --variant release
                 '''
             }
@@ -51,7 +47,10 @@ pipeline {
 
         stage('Archive APK') {
             steps {
-                archiveArtifacts artifacts: '**/app/build/outputs/**/*.apk', fingerprint: true
+                // Path where APK is generated can vary, usually in android/app/build/outputs/apk
+                // We'll use wildcard to find APK
+                sh 'find . -name "*.apk"'
+                archiveArtifacts artifacts: '**/*.apk', fingerprint: true
             }
         }
     }
