@@ -4,10 +4,9 @@ pipeline {
     environment {
         NVM_DIR = "/var/lib/jenkins/.nvm"
         NODE_VERSION = "v16.20.2"
-        PATH = "/var/lib/jenkins/.nvm/versions/node/${NODE_VERSION}/bin:$PATH"
         ANDROID_HOME = "/opt/android-sdk"
         ANDROID_SDK_ROOT = "/opt/android-sdk"
-        PATH = "${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/cmdline-tools/latest/bin:${PATH}"
+        PATH = "/var/lib/jenkins/.nvm/versions/node/${NODE_VERSION}/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/tools:${ANDROID_HOME}/cmdline-tools/latest/bin:$PATH"
     }
 
     stages {
@@ -42,7 +41,7 @@ pipeline {
                     
                     export ANDROID_HOME=/opt/android-sdk
                     export ANDROID_SDK_ROOT=/opt/android-sdk
-                    export PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+                    export PATH=/var/lib/jenkins/.nvm/versions/node/${NODE_VERSION}/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
                     
                     sdkmanager --version
                     
